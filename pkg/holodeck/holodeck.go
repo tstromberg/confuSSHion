@@ -12,7 +12,7 @@ import (
 	"github.com/gliderlabs/ssh"
 	"github.com/tstromberg/confuSSHion/pkg/personality"
 	gossh "golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 	"k8s.io/klog/v2"
 )
 
@@ -35,6 +35,12 @@ type Holodeck struct {
 	p       personality.Personality
 }
 
+type Response struct {
+	Output      []byte
+	ShellPrompt string
+	Logout      bool
+}
+
 func (h Holodeck) Handler(s ssh.Session) error {
 	log.Printf("ssh key: %s", s.PublicKey())
 	h.p = personality.New(h.nc, personality.UserInfo{
@@ -45,73 +51,96 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		Command: s.Command(),
 	})
 
-	// Create a pseudo-terminal with distribution-specific prompt
-	term := terminal.NewTerminal(s, "")
-
-	basePrompt := h.p.AIPrompt()
-
-	resp, err := h.model.GenerateContent(h.ctx, genai.Text(
-		basePrompt+"\n\n"+
-			"The user has just logged into the system, welcome them with a standard login message. If your standard login procedure shows the last time the user logged in, they have never logged in before."))
+	resp, err := h.simulate("The user has just logged into the system, welcome them with a standard login message and an appropriate shell prompt. If your standard login procedure shows the last time the user logged in, they have never logged in before.")
 	if err != nil {
-		klog.Errorf("geerateContent: %v")
+		return err
 	}
-	term.Write([]byte(fmt.Sprintf("%s ", respString(resp))))
+
+	time.Sleep(500 * time.Millisecond)
+	term := term.NewTerminal(s, resp.ShellPrompt)
+	term.Write(resp.Output)
+	history := []string{}
 
 	for {
 		// Read command from SSH session
+		klog.Infof("waiting for input ...")
 		cmd, err := term.ReadLine()
 		if err != nil {
 			klog.Errorf("readline: %v", err)
 			break
 		}
 
-		time.Sleep(100 * time.Millisecond)
-		out, logout := h.ProcessCmd(cmd)
-		term.Write([]byte(strings.TrimSpace(fmt.Sprintf("%s", out))))
-		if logout {
+		klog.Infof("cmd: [%s]", strings.TrimSpace(cmd))
+		time.Sleep(200 * time.Millisecond)
+		if cmd == "" {
+			continue
+		}
+
+		prompt := fmt.Sprintf(`
+			The user just entered the command %q over an interactive SSH session.
+			Previously, they entered these commands in order: %s
+
+			Unless the user has changed directories via 'cd', assume their current working directory is their home directory.
+
+			Generate the appropriate output for that command, but also incorporate any state changes that the previous commands may have caused. Do not include a shell prompt in your output.
+		`, cmd, strings.Join(h.history, "\n"))
+
+		resp, err := h.simulate(prompt)
+		term.Write(resp.Output)
+
+		if cmd == "exit" || cmd == "logout" {
 			break
 		}
+
+		if resp.ShellPrompt != "" {
+			klog.Infof("setting prompt to: %q", resp.ShellPrompt)
+			term.SetPrompt(resp.ShellPrompt)
+		}
+		history = append(history, cmd)
 	}
 
 	return nil
 }
 
-// processCmd simulates the output of a command, returning true if the connection should be kept open.
-func (h Holodeck) ProcessCmd(cmd string) (string, bool) {
-	klog.Infof("cmd: [%s]", strings.TrimSpace(cmd))
-
-	logout := false
-	// if strings.TrimSpace(cmd) == "" {
-	// 	continue
-	//	}
-
-	h.history = append(h.history, cmd)
-
-	if cmd == "exit" || cmd == "logout" {
-		logout = true
-	}
-
-	prompt := fmt.Sprintf(`%s
-
-		The user just entered the command %q over an interactive SSH session.
-		Previously, they entered these commands in order: %s
-
-		Generate the appropriate output for that command, but also incorporate any state changes that the previous commands may have caused. Do not include a shell prompt in your output.
-	`, h.p.AIPrompt(), cmd, strings.Join(h.history, "\n"))
-
-	// Send command to Gemini for processing
-	resp, err := h.model.GenerateContent(h.ctx, genai.Text(prompt))
+func (h Holodeck) simulate(prompt string) (*Response, error) {
+	fullPrompt := h.p.AIPrompt() + "\n\n" + prompt
+	klog.Infof("sending prompt: %s", fullPrompt)
+	resp, err := h.model.GenerateContent(h.ctx, genai.Text(fullPrompt))
 	if err != nil {
-		klog.Errorf("error: %v", err)
-		return "", false
+		return nil, err
 	}
 
-	return respString(resp), logout
-}
+	output := []string{}
+	shellPrompt := ""
+	raw := fmt.Sprintf("%s", resp.Candidates[0].Content.Parts[0])
 
-func respString(resp *genai.GenerateContentResponse) string {
-	return fmt.Sprintf("%s", resp.Candidates[0].Content.Parts[0])
+	lines := strings.Split(raw, "\n")
+	for x, l := range lines {
+		// vertex bug workaround, sometimes it returns markdown
+		if l == "```" {
+			log.Printf("skipping markdown line: %q", l)
+			continue
+		}
+		if x == len(lines)-2 {
+			output = append(output, "")
+			shellPrompt = l
+			break
+		}
+		output = append(output, l)
+	}
+
+	out := strings.Join(output, "\n")
+	klog.Infof("vertex response: %s", out)
+	klog.Infof("vertex prompt: %s", shellPrompt)
+
+	if !strings.HasSuffix(shellPrompt, " ") {
+		shellPrompt = shellPrompt + " "
+	}
+
+	return &Response{
+		Output:      []byte(out),
+		ShellPrompt: shellPrompt,
+	}, nil
 }
 
 func (h Holodeck) PublicKeyHandler(ctx ssh.Context, key ssh.PublicKey) bool {
