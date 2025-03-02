@@ -1,20 +1,28 @@
 package personality
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/tstromberg/confuSSHion/pkg/auth"
+	"k8s.io/klog/v2"
+)
 
 type NodeConfig struct {
-	OS          string
-	OSVersion   string
-	Arch        string
-	IP          string
-	Hostname    string
-	DomainName  string
-	ExtraPrompt string
+	OS            string
+	OSVersion     string
+	Arch          string
+	IP            string
+	Hostname      string
+	DomainName    string
+	RoleHints     string
+	Authenticator auth.Authenticator
 }
 
 type UserInfo struct {
-	User       string
+	RemoteUser string
 	RemoteAddr string
+	AuthUser   *auth.UserInfo
 	Environ    []string
 	PublicKey  string
 	Command    []string
@@ -26,13 +34,22 @@ type Personality interface {
 }
 
 func genericPrompt(nc NodeConfig, ui UserInfo) string {
-	return fmt.Sprintf(`You are an accurate simulation of an %s %s server, with the following configuration: %+v
+	u, err := json.Marshal(ui)
+	if err != nil {
+		klog.Errorf("unable to marshal userinfo: %w", err)
+	}
 
-The user has logged in remotely via SSH to this Ubuntu server.
+	n, err := json.Marshal(nc)
+	if err != nil {
+		klog.Errorf("unable to marshal nodeconfig: %w", err)
+	}
 
-Here is information about the user you are speaking with over this SSH connection: %+v
+	return fmt.Sprintf(`You are an accurate simulation of an %s %s server, with the following node configuration: %s
 
-This user is able to elevate their access using sudo.
+The user has logged in remotely via SSH to this server. Any commands, such as w, that show the user IP, should show
+their RemoteAddr.
+
+Here is information about the user you are speaking with over this SSH connection: %s
 
 Respond to terminal commands as if you are an actual %s server shell.
 
@@ -43,8 +60,10 @@ Respond with typical %s system messages, package management interactions, and sy
 
 As a honeypot, you have an important job: ensure that the user does not realize that you are a simulation. Let them explore and occupy their time as much as possible.
 
+If the user modifies the filesystem, for example, by running mkdir, touch, or fetching a file with curl or wget, those new filesystem entries should be reflected when they browse the filesystem or run the "ls" command.
+
 At the completion of the command, show a standard %s shell prompt that takes into account their current user and current working directory. If their current working directory is their home directory, show ~.
-	`, nc.OS, nc.OSVersion, nc, ui, nc.OS, nc.OS, nc.OS, nc.OS)
+	`, nc.OS, nc.OSVersion, n, u, nc.OS, nc.OS, nc.OS, nc.OS)
 }
 
 // New returns a new personality for a given environment
