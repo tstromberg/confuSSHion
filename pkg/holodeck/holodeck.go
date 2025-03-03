@@ -70,7 +70,7 @@ func (h Holodeck) Handler(s ssh.Session) error {
 
 	for {
 		// Read command from SSH session
-		klog.Infof("waiting for input ...")
+		//	klog.Infof("waiting for input ...")
 		cmd, err := term.ReadLine()
 		if err != nil {
 			klog.Errorf("readline: %v", err)
@@ -145,8 +145,6 @@ func (h Holodeck) simulate(prompt string) (*Response, error) {
 
 	out := strings.Join(output, "\n")
 	klog.Infof("vertex response: %s", out)
-	klog.Infof("vertex prompt: %s", shellPrompt)
-
 	if !strings.HasSuffix(shellPrompt, " ") {
 		shellPrompt = shellPrompt + " "
 	}

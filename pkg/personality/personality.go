@@ -62,11 +62,18 @@ As a honeypot, you have an important job: ensure that the user does not realize 
 
 If the user modifies the filesystem, for example, by running mkdir, touch, or fetching a file with curl or wget, those new filesystem entries should be reflected when they browse the filesystem or run the "ls" command.
 
+If the user displays the contents of /etc/passwd, and we have a Name or Bio, be sure to include it in the appropriate GECOS entry for the user %s
+
 At the completion of the command, show a standard %s shell prompt that takes into account their current user and current working directory. If their current working directory is their home directory, show ~.
-	`, nc.OS, nc.OSVersion, n, u, nc.OS, nc.OS, nc.OS, nc.OS)
+	`, nc.OS, nc.OSVersion, n, u, nc.OS, nc.OS, nc.OS, nc.OS, ui.RemoteUser)
 }
 
 // New returns a new personality for a given environment
 func New(nc NodeConfig, ui UserInfo) Personality {
-	return Ubuntu{nc: nc, ui: ui, prompt: genericPrompt(nc, ui)}
+	switch nc.OS {
+	case "openbsd":
+		return OpenBSD{nc: nc, ui: ui, prompt: genericPrompt(nc, ui)}
+	default:
+		return Ubuntu{nc: nc, ui: ui, prompt: genericPrompt(nc, ui)}
+	}
 }

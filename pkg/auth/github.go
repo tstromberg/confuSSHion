@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -15,6 +16,8 @@ import (
 	"golang.org/x/oauth2"
 	"k8s.io/klog/v2"
 )
+
+var nonASCIIRe = regexp.MustCompile("[[:^ascii:]]")
 
 // GitHubAuthenticator validates SSH keys against GitHub organization membership.
 type GitHubAuthenticator struct {
@@ -191,13 +194,13 @@ func (a *GitHubAuthenticator) fetchOrgMembers() ([]*UserInfo, error) {
 
 				members = append(members, &UserInfo{
 					Username:        username,
-					Name:            details.GetName(),
-					Company:         details.GetCompany(),
-					Blog:            details.GetBlog(),
-					Location:        details.GetLocation(),
-					Email:           details.GetEmail(),
-					Bio:             details.GetBio(),
-					TwitterUsername: details.GetTwitterUsername(),
+					Name:            cleanChar(details.GetName()),
+					Company:         cleanChar(details.GetCompany()),
+					Blog:            cleanChar(details.GetBlog()),
+					Location:        cleanChar(details.GetLocation()),
+					Email:           cleanChar(details.GetEmail()),
+					Bio:             cleanChar(details.GetBio()),
+					TwitterUsername: cleanChar(details.GetTwitterUsername()),
 				})
 			}
 		}
@@ -209,6 +212,10 @@ func (a *GitHubAuthenticator) fetchOrgMembers() ([]*UserInfo, error) {
 	}
 
 	return members, nil
+}
+
+func cleanChar(s string) string {
+	return strings.TrimSpace(nonASCIIRe.ReplaceAllLiteralString(s, ""))
 }
 
 // fetchUserKeysPublic retrieves SSH keys using GitHub's public keys endpoint.
