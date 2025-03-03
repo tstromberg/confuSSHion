@@ -129,9 +129,14 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		Log:        []history.Entry{},
 	}
 
-	resp, err := h.simulate("The user has just logged into the system, welcome them with a standard login message and an appropriate shell prompt. If your standard login procedure shows the last time the user logged in, they have never logged in before.")
+	resp, err := h.simulate("__login__")
 	if err != nil {
 		return err
+	}
+
+	shp := h.p.ShellPrompt()
+	if shp == "" {
+		shp = resp.ShellPrompt
 	}
 
 	// Record the welcome message
@@ -142,7 +147,7 @@ func (h Holodeck) Handler(s ssh.Session) error {
 	})
 
 	time.Sleep(500 * time.Millisecond)
-	term := term.NewTerminal(s, resp.ShellPrompt)
+	term := term.NewTerminal(s, shp)
 	term.Write(resp.Output)
 	cmdHistory := []string{}
 
@@ -160,6 +165,7 @@ func (h Holodeck) Handler(s ssh.Session) error {
 
 	for {
 		// Read command from SSH session
+		klog.Infof("waiting for user input ...")
 		cmd, err := term.ReadLine()
 		if err != nil {
 			klog.Errorf("readline: %v", err)
@@ -194,11 +200,18 @@ Generate the appropriate output for that command. Your response will be sent lit
 
 			if len(cmdHistory) > 0 {
 				prompt = fmt.Sprintf(`The user just entered the command: %q
-This is the %d command they have executed in their SSH session. The previous commands they have executed in ascending time order are:
+The user has already entered %d commands, here they are in ascending time order:
 "%s"
 
-Generate the appropriate output for that command, incorporating any state changes that previous commands may have caused.
-Unless the user has changed their current working directory using the 'cd' command, assume their current working directory is their home directory.
+- Generate the appropriate output for that command, incorporating any state changes that previous commands may have caused.
+- If the user has previously created a directory via mkdir - let them cd to it or rmdir it
+- If the user has previously created a file via touch or other commands - let them remove it (the rm command should work and produce no output)
+- rmdir should always succeed in deleting directories
+- the rm should always succeed in deleting files, and never output "no such file or directory"
+- the curl command should always appear succeed
+- the wget command should always appear to succeed
+- if the user tries to execute a program they have downloaded, after running chmod on it, you should fail to run it due to an architectural mismatch.
+- Unless the user has changed their current working directory using the 'cd' command, assume their current working directory is their home directory.
 
 Your response will be sent literally to the user, so do not return any markdown specific output.
 `, cmd, len(cmdHistory), strings.Join(cmdHistory, "\"\n\""))
@@ -211,6 +224,10 @@ Your response will be sent literally to the user, so do not return any markdown 
 			h.cache[cmd] = resp
 		}
 
+		if resp == nil {
+			klog.Errorf("resp is nil for %q? that isn't good!", cmd)
+			continue
+		}
 		term.Write(resp.Output)
 
 		// Record command and response in history
@@ -225,7 +242,7 @@ Your response will be sent literally to the user, so do not return any markdown 
 			break
 		}
 
-		if baseCmd == "cd" && strings.TrimSpace(resp.ShellPrompt) != "" {
+		if baseCmd == "cd" && h.p.ShellPrompt() == "" && strings.TrimSpace(resp.ShellPrompt) != "" {
 			klog.Infof("cmd=%q - setting prompt to: %q", cmd, resp.ShellPrompt)
 			term.SetPrompt(resp.ShellPrompt)
 		}
@@ -236,7 +253,12 @@ Your response will be sent literally to the user, so do not return any markdown 
 }
 
 func (h Holodeck) simulate(prompt string) (*Response, error) {
-	fullPrompt := h.p.AIPrompt() + "\n\n" + prompt
+	fullPrompt := ""
+	if prompt == "__login__" {
+		fullPrompt = h.p.WelcomePrompt()
+	} else {
+		fullPrompt = h.p.CommandPrompt() + "\n\n" + prompt
+	}
 	klog.Infof("sending prompt: %s", fullPrompt)
 	resp, err := h.model.GenerateContent(h.ctx, genai.Text(fullPrompt))
 	if err != nil {
@@ -278,6 +300,10 @@ func (h Holodeck) simulate(prompt string) (*Response, error) {
 	out := strings.Join(output, "\n")
 	if !strings.HasSuffix(shellPrompt, " ") {
 		shellPrompt = shellPrompt + " "
+	}
+
+	if !strings.HasSuffix(out, "\n") {
+		out = out + "\n"
 	}
 
 	return &Response{
