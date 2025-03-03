@@ -9,14 +9,13 @@ import (
 )
 
 type NodeConfig struct {
-	OS            string
-	OSVersion     string
-	Arch          string
-	IP            string
-	Hostname      string
-	DomainName    string
-	RoleHints     string
-	Authenticator auth.Authenticator
+	OS         string
+	OSVersion  string
+	Arch       string
+	IP         string
+	Hostname   string
+	DomainName string
+	RoleHints  string
 }
 
 type UserInfo struct {

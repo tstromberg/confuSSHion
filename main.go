@@ -11,8 +11,10 @@ import (
 	"github.com/gliderlabs/ssh"
 	"github.com/google/generative-ai-go/genai"
 	"github.com/tstromberg/confuSSHion/pkg/auth"
+	"github.com/tstromberg/confuSSHion/pkg/history"
 	"github.com/tstromberg/confuSSHion/pkg/holodeck"
 	"github.com/tstromberg/confuSSHion/pkg/personality"
+	"github.com/tstromberg/confuSSHion/pkg/ui"
 	"google.golang.org/api/option"
 	"k8s.io/klog/v2"
 )
@@ -25,6 +27,8 @@ var (
 	githubOrgFlag       = flag.String("github-org", "", "GitHub organization to require users to be part of")
 	refreshIntervalFlag = flag.Duration("github-refresh-interval", 12*time.Hour, "Interval to refresh GitHub SSH keys")
 	publicKeyAuthFlag   = flag.Bool("public-key-auth", false, "require public key auth")
+	historyPathFlag     = flag.String("history", "", "Path to BadgerDB history database (if empty, history is not saved)")
+	httpPortFlag        = flag.Int("http-port", 8080, "Port for the web UI (0 to disable)")
 )
 
 func main() {
@@ -50,12 +54,40 @@ func main() {
 	}
 	defer a.Close()
 
+	// Initialize history store if path is provided
+	var histStore *history.Store
+	if *historyPathFlag != "" {
+		var err error
+		histStore, err = history.NewStore(*historyPathFlag)
+		if err != nil {
+			log.Fatalf("Failed to create history store: %v", err)
+		}
+		defer histStore.Close()
+		log.Printf("Session history will be saved to: %s", *historyPathFlag)
+	} else {
+		log.Printf("Session history will not be saved (use --history to enable)")
+	}
+
+	if *historyPathFlag != "" && *httpPortFlag > 0 {
+		uiServer, err := ui.NewServer(histStore, *httpPortFlag)
+		if err != nil {
+			log.Fatalf("Failed to create UI server: %v", err)
+		}
+
+		go func() {
+			if err := uiServer.Start(); err != nil {
+				log.Printf("Web UI error: %v", err)
+			}
+		}()
+	} else if *httpPortFlag > 0 {
+		log.Printf("Web UI disabled because history storage is not enabled")
+	}
+
 	h := holodeck.New(ctx, model, personality.NodeConfig{
-		OS:            *distroFlag,
-		Hostname:      *hostnameFlag,
-		RoleHints:     *promptFlag,
-		Authenticator: a,
-	})
+		OS:        *distroFlag,
+		Hostname:  *hostnameFlag,
+		RoleHints: *promptFlag,
+	}, histStore, a)
 
 	// SSH server setup
 	ssh.Handle(func(s ssh.Session) {
@@ -69,11 +101,11 @@ func main() {
 	if *publicKeyAuthFlag {
 		klog.Infof("using public key handler ...")
 		err = ssh.ListenAndServe(listenAddr, nil, ssh.PublicKeyAuth(h.PublicKeyHandler))
-
 	} else {
 		klog.Infof("using nil auth handler ...")
 		err = ssh.ListenAndServe(listenAddr, nil)
 	}
+
 	if err != nil {
 		klog.Fatalf("listen: %w", err)
 	}
