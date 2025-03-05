@@ -15,7 +15,6 @@ import (
 
 // Handler handles SSH sessions
 func (h Holodeck) Handler(s ssh.Session) error {
-	klog.Infof("new session!")
 	sid := s.Context().SessionID()
 
 	sess := &history.SessionContext{
@@ -31,6 +30,7 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		RoleDescription: h.nc.RoleDescription,
 		History:         []history.Entry{},
 	}
+	klog.Infof("new session: %+v", sess)
 
 	var err error
 	var resp *Response
