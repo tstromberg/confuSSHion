@@ -22,8 +22,8 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		SID:             sid,
 		StartTime:       time.Now(),
 		OS:              h.nc.OS,
-		Arch:            h.nc.Arch,
-		Hostname:        h.nc.Hostname,
+		Arch:            h.p.Arch(),
+		Hostname:        h.p.Hostname(),
 		User:            s.User(),
 		RemoteAddr:      s.RemoteAddr().String(),
 		Environ:         s.Environ(),
@@ -134,6 +134,7 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		if cmd == "kill -9 -1" {
 			time.Sleep(time.Second)
 			break
+
 		}
 
 		if baseCmd == "cd" && h.p.ShellPrompt() == "" && strings.TrimSpace(resp.ShellPrompt) != "" {

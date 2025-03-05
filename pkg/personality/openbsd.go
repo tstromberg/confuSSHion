@@ -18,7 +18,7 @@ func (p OpenBSD) Arch() string {
 	if p.NodeConfig.Arch != "" {
 		return p.NodeConfig.Arch
 	}
-	return "sparc64"
+	return "amd64"
 }
 
 func (p OpenBSD) Hostname() string {
