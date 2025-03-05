@@ -6,25 +6,7 @@ import (
 	"time"
 
 	"github.com/dgraph-io/badger/v3"
-	"github.com/tstromberg/confuSSHion/pkg/personality"
 )
-
-// Entry represents a single command/response pair in the session
-type Entry struct {
-	Timestamp time.Time `json:"timestamp"`
-	Input     string    `json:"input"`
-	Output    string    `json:"output"`
-}
-
-// Session represents a complete SSH session history
-type Session struct {
-	SID        string              `json:"sid"`
-	StartTime  time.Time           `json:"start_time"`
-	EndTime    time.Time           `json:"end_time"`
-	UserInfo   personality.UserInfo `json:"user_info"`
-	NodeConfig personality.NodeConfig `json:"node_config"`
-	Log        []Entry             `json:"log"`
-}
 
 // Store handles the persistence of session histories
 type Store struct {
@@ -51,14 +33,14 @@ func (s *Store) Close() error {
 }
 
 // SaveSession persists a session to the database
-func (s *Store) SaveSession(session *Session) error {
-	data, err := json.Marshal(session)
+func (s *Store) SaveSession(sess *SessionContext) error {
+	data, err := json.Marshal(sess)
 	if err != nil {
 		return fmt.Errorf("failed to marshal session: %w", err)
 	}
 
 	return s.db.Update(func(txn *badger.Txn) error {
-		key := []byte("session:" + session.SID)
+		key := []byte("session:" + sess.SID)
 		err := txn.Set(key, data)
 		if err != nil {
 			return fmt.Errorf("failed to save session: %w", err)
@@ -68,8 +50,8 @@ func (s *Store) SaveSession(session *Session) error {
 }
 
 // GetSession retrieves a session from the database
-func (s *Store) GetSession(sid string) (*Session, error) {
-	var session Session
+func (s *Store) GetSession(sid string) (*SessionContext, error) {
+	var session SessionContext
 	err := s.db.View(func(txn *badger.Txn) error {
 		key := []byte("session:" + sid)
 		item, err := txn.Get(key)
@@ -81,7 +63,6 @@ func (s *Store) GetSession(sid string) (*Session, error) {
 			return json.Unmarshal(val, &session)
 		})
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -104,9 +85,35 @@ func (s *Store) ListSessions() ([]string, error) {
 		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
 	return sessions, nil
+}
+
+// Entry represents a single command/response pair in the session
+type Entry struct {
+	T    time.Time `json:"timestamp"`
+	Kind string    `json:"kind`
+	In   string    `json:"in"`
+	Out  string    `json:"out"`
+}
+
+// SessionContext represents a complete SSH session history
+type SessionContext struct {
+	SID             string    `json:"sid"`
+	StartTime       time.Time `json:"start_time"`
+	EndTime         time.Time `json:"end_time"`
+	RemoteAddr      string    `json:"remote_addr"`
+	User            string    `json:"user"`
+	AuthUser        string    `json:"auth_user"`
+	PublicKey       string    `json:"public_key"`
+	OS              string    `json:"os"`
+	Arch            string    `json:"arch"`
+	Hostname        string    `json:"hostname"`
+	RoleDescription string    `json:"role_description"`
+	LoginCommand    []string  `json:"login_command"`
+	CurrentCommand  string    `json:"current_command"`
+	Environ         []string  `json:"environ"`
+	History         []Entry   `json:"log"`
 }

@@ -3,23 +3,27 @@ package personality
 import "fmt"
 
 type Ubuntu struct {
-	nc            NodeConfig
-	ui            UserInfo
-	cmdPrompt     string
-	welcomePrompt string
-	shellPrompt   string
+	NodeConfig NodeConfig
 }
 
-func (p Ubuntu) CommandPrompt() string {
-	return fmt.Sprintf(`%s. Use bash shell conventions, apt package manager.
-	`, p.cmdPrompt)
-}
-
-func (p Ubuntu) WelcomePrompt() string {
-	return p.welcomePrompt
+func (p Ubuntu) Hints() string {
+	return fmt.Sprintf(`Use bash shell conventions, apt package manager.`)
 }
 
 func (p Ubuntu) ShellPrompt() string {
-	// autodetect
 	return ""
+}
+
+func (p Ubuntu) Arch() string {
+	if p.NodeConfig.Arch != "" {
+		return p.NodeConfig.Arch
+	}
+	return "riscv"
+}
+
+func (p Ubuntu) Hostname() string {
+	if p.NodeConfig.Hostname != "" {
+		return p.NodeConfig.Hostname
+	}
+	return "ubuntu"
 }

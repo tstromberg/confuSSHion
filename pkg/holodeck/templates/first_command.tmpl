@@ -1,0 +1,9 @@
+{{template "shared.tmpl" .}}
+{{template "shared_command.tmpl" .}}
+
+The first command this user is invoking in their interactive SSH session is "{{.CurrentCommand}}"
+
+Generate the appropriate output for that command. Your response will be sent literally to the user, so do not return any markdown specific output.
+
+The user has logged in remotely via SSH to this server. Any commands, such as w, that show the user IP, should show
+their RemoteAddr.

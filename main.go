@@ -24,6 +24,7 @@ var (
 	promptFlag          = flag.String("prompt", "this machine acts as a firewall and proxy protecting very sensitive data", "Extra prompt for Gemini")
 	hostnameFlag        = flag.String("hostname", "", "Custom hostname to use")
 	distroFlag          = flag.String("dist", "ubuntu", "Target distribution (aix, arch, fedora, freebsd, hpux, irix, nextstep, openbsd, solaris)")
+	archFlag            = flag.String("arch", "", "Target architecture (armd64, amd64, hppa, etc)")
 	githubOrgFlag       = flag.String("github-org", "", "GitHub organization to require users to be part of")
 	refreshIntervalFlag = flag.Duration("github-refresh-interval", 12*time.Hour, "Interval to refresh GitHub SSH keys")
 	publicKeyAuthFlag   = flag.Bool("public-key-auth", false, "require public key auth")
@@ -84,9 +85,9 @@ func main() {
 	}
 
 	h := holodeck.New(ctx, model, personality.NodeConfig{
-		OS:        *distroFlag,
-		Hostname:  *hostnameFlag,
-		RoleHints: *promptFlag,
+		OS:              *distroFlag,
+		Hostname:        *hostnameFlag,
+		RoleDescription: *promptFlag,
 	}, histStore, a)
 
 	// SSH server setup

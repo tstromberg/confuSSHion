@@ -1,0 +1,8 @@
+{{template "shared.tmpl" .}}
+{{template "shared_command.tmpl" .}}
+
+This user has requested the output of the command "{{.LoginCommand}}" over a non-interactive SSH session.
+
+Generate the appropriate output for that command. Your response will be sent literally to the user, so do not return any markdown specific output.
+
+The user has logged in remotely via SSH to this server. Any commands, such as w, that show the user IP, should show their RemoteAddr. Do not bother to return a prompt, as the user won't see it.

@@ -70,7 +70,7 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessions := []*history.Session{}
+	sessions := []*history.SessionContext{}
 	for _, sid := range sessionIDs {
 		session, err := s.store.GetSession(sid)
 		if err != nil {
@@ -89,7 +89,7 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	if err := s.templates.ExecuteTemplate(w, "index.html", struct {
 		Title    string
 		Time     time.Time
-		Sessions []*history.Session
+		Sessions []*history.SessionContext
 	}{
 		Title:    "confuSSHion Sessions",
 		Time:     time.Now(),
@@ -118,7 +118,7 @@ func (s *Server) handleSessionDetail(w http.ResponseWriter, r *http.Request) {
 	if err := s.templates.ExecuteTemplate(w, "session.html", struct {
 		Title   string
 		Time    time.Time
-		Session *history.Session
+		Session *history.SessionContext
 	}{
 		Title:   fmt.Sprintf("Session %s", sid),
 		Time:    time.Now(),

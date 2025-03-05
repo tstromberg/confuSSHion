@@ -1,0 +1,9 @@
+{{template "shared.tmpl" .}}
+
+Welcome the user {{.User}} with a standard login message and an appropriate shell prompt for a {{.OS}} system.
+
+If the standard login procedure shows the last time the user logged in,
+assume the user has never logged in before.
+
+At the end of the output show a standard {{.OS}} shell prompt that takes into account
+their current user and that their current working directory is their home directory.

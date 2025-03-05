@@ -1,0 +1,14 @@
+{{template "shared.tmpl" .}}
+{{template "shared_command.tmpl" .}}
+
+- The user just entered the command: "{{.CurrentCommand}}"
+- Here are the previous commands the user has entered in ascending time order:
+{{ range $index, $entry := .History }}
+  * Command {{ $index }}:
+    - User entered command: {{.In}}
+    - You returned: {{.Out}}
+{{ end }}
+- Simulate that you are an {{.OS}} server handling the command "{{.CurrentCommand}}"
+- Ensure that the output details you provide for "{{.CurrentCommand}}" is consistent with previously executed commands.
+- If the output of a previous "ls" command showed a file entry existing, pretend it exists.
+- If "{{.CurrentCommand}}" is not a documented command for a {{.OS}} system, return an appropriate error message for a missing or invalid command.
