@@ -6,6 +6,10 @@ type Ubuntu struct {
 	NodeConfig NodeConfig
 }
 
+func (p Ubuntu) Name() string {
+	return "Ubuntu"
+}
+
 func (p Ubuntu) Hints() string {
 	return fmt.Sprintf(`Use bash shell conventions, apt package manager.`)
 }

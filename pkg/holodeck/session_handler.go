@@ -20,7 +20,7 @@ func (h Holodeck) Handler(s ssh.Session) error {
 	sess := &history.SessionContext{
 		SID:             sid,
 		StartTime:       time.Now(),
-		OS:              h.nc.OS,
+		OS:              h.p.Name(),
 		Arch:            h.p.Arch(),
 		Hostname:        h.p.Hostname(),
 		User:            s.User(),
@@ -28,6 +28,7 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		Environ:         s.Environ(),
 		LoginCommand:    s.Command(),
 		RoleDescription: h.nc.RoleDescription,
+		PromptHints:     h.p.Hints(),
 		History:         []history.Entry{},
 	}
 	klog.Infof("new session: %+v", sess)
@@ -127,7 +128,7 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		term.Write(resp.Output)
 		sess.History = append(sess.History, history.Entry{Kind: "cmd", T: time.Now(), In: cmd, Out: string(resp.Output)})
 
-		if baseCmd == "exit" || baseCmd == "logout" || baseCmd == "reboot" {
+		if baseCmd == "exit" || baseCmd == "logout" || baseCmd == "reboot" || baseCmd == "LOGOUT" {
 			time.Sleep(time.Second)
 			break
 		}
@@ -196,8 +197,10 @@ func (h Holodeck) hallucinate(prompt string) (*Response, error) {
 		output = append(output, l)
 	}
 
-	out := strings.TrimSpace(strings.Join(output, "\n")) + "\n"
-
+	out := strings.TrimSpace(strings.Join(output, "\n"))
+	if len(out) > 0 {
+		out += "\n"
+	}
 	// Ensure proper formatting
 	if !strings.HasSuffix(shellPrompt, " ") {
 		shellPrompt = shellPrompt + " "

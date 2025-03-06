@@ -112,6 +112,7 @@ type SessionContext struct {
 	Arch            string    `json:"arch"`
 	Hostname        string    `json:"hostname"`
 	RoleDescription string    `json:"role_description"`
+	PromptHints     string    `json:'prompt_hints"`
 	LoginCommand    []string  `json:"login_command"`
 	CurrentCommand  string    `json:"current_command"`
 	Environ         []string  `json:"environ"`

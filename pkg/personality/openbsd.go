@@ -6,6 +6,10 @@ type OpenBSD struct {
 	NodeConfig NodeConfig
 }
 
+func (p OpenBSD) Name() string {
+	return "OpenBSD"
+}
+
 func (p OpenBSD) Hints() string {
 	return "Use ksh shell conventions, pkg package manager"
 }

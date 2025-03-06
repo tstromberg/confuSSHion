@@ -12,3 +12,5 @@
 - Ensure that the output details you provide for "{{.CurrentCommand}}" is consistent with previously executed commands.
 - If the output of a previous "ls" command showed a file entry existing, pretend it exists.
 - If "{{.CurrentCommand}}" is not a documented command for a {{.OS}} system or the shell environment the user is using, return an appropriate error message for a missing or invalid command.
+
+{{template "final_hints.tmpl" .}}

@@ -23,7 +23,7 @@ var (
 	portFlag            = flag.Int("port", 2222, "Port to listen on for SSH connections")
 	promptFlag          = flag.String("prompt", "this machine acts as a firewall and proxy protecting very sensitive data", "Extra prompt for Gemini")
 	hostnameFlag        = flag.String("hostname", "", "Custom hostname to use")
-	distroFlag          = flag.String("dist", "ubuntu", "Target distribution (aix, arch, fedora, freebsd, hpux, irix, nextstep, openbsd, solaris)")
+	distroFlag          = flag.String("dist", "ubuntu", "Target distribution (aix, hpux, irix, nextstep, openbsd, solaris, ubuntu, ultrix, windows, wolfi)")
 	archFlag            = flag.String("arch", "", "Target architecture (armd64, amd64, hppa, etc)")
 	githubOrgFlag       = flag.String("github-org", "", "GitHub organization to require users to be part of")
 	refreshIntervalFlag = flag.Duration("github-refresh-interval", 12*time.Hour, "Interval to refresh GitHub SSH keys")
