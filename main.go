@@ -87,6 +87,7 @@ func main() {
 	h := holodeck.New(ctx, model, personality.NodeConfig{
 		OS:              *distroFlag,
 		Hostname:        *hostnameFlag,
+		Arch:            *archFlag,
 		RoleDescription: *promptFlag,
 	}, histStore, a)
 

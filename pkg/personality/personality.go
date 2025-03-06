@@ -24,6 +24,7 @@ type Personality interface {
 
 // New returns a new personality for a given environment
 func New(nc NodeConfig) Personality {
+	klog.Infof("Creating personality for: %+v", nc)
 	switch nc.OS {
 	case "aix":
 		return &AIX{NodeConfig: nc}
