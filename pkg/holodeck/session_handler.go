@@ -154,8 +154,8 @@ func (h Holodeck) Handler(s ssh.Session) error {
 
 			klog.Infof("is %q cacheable globally? %v", baseCmd, globallyCacheable[baseCmd])
 			if globallyCacheable[baseCmd] {
-				klog.Infof("globally caching %q", baseCmd)
-				globalCache[baseCmd] = resp
+				klog.Infof("globally caching %q", cmd)
+				globalCache[cmd] = resp
 			} else if locallyCacheable[baseCmd] {
 				klog.Infof("locally caching %q", baseCmd)
 				h.cache[cmd] = resp

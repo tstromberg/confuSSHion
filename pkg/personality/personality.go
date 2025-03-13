@@ -28,6 +28,8 @@ func New(nc NodeConfig) Personality {
 	switch nc.OS {
 	case "aix":
 		return &AIX{NodeConfig: nc}
+	case "beos":
+		return &BeOS{NodeConfig: nc}
 	case "fedora":
 		return &Fedora{NodeConfig: nc}
 	case "freebsd":
@@ -36,6 +38,8 @@ func New(nc NodeConfig) Personality {
 		return &Gentoo{NodeConfig: nc}
 	case "hpux":
 		return &HPUX{NodeConfig: nc}
+	case "hurd":
+		return &Hurd{NodeConfig: nc}
 	case "irix":
 		return &IRIX{NodeConfig: nc}
 	case "nextstep":

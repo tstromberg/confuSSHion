@@ -6,12 +6,14 @@ confuSSHion is an LLM-based SSH honeypot that simulates an interactive terminal 
 
 ## Available Simulations
 
-confuSSHion simulates many esoteric environments:
+confuSSHion simulates many environments. However, the more esoteric the environment, the less likely it is to be accurate (patches welcome!):
 
 - 🐦 AIX
+- 🔥 BeOS
 - 🦊 Fedora Linux
 - 😈 FreeBSD
 - 🧠 Gentoo Linux
+- 🐂 GNU/Hurd
 - 🦑 HP-UX
 - 🌈 IRIX
 - 🍎 NeXTSTEP
