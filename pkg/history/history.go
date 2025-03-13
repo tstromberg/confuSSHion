@@ -104,6 +104,7 @@ type SessionContext struct {
 	SID             string    `json:"sid"`
 	StartTime       time.Time `json:"start_time"`
 	EndTime         time.Time `json:"end_time"`
+	LocalAddr       string    `json:"local_addr"`
 	RemoteAddr      string    `json:"remote_addr"`
 	User            string    `json:"user"`
 	AuthUser        string    `json:"auth_user"`
@@ -111,6 +112,7 @@ type SessionContext struct {
 	OS              string    `json:"os"`
 	Arch            string    `json:"arch"`
 	Hostname        string    `json:"hostname"`
+	NodeIP          string    `json:"node_ip"`
 	RoleDescription string    `json:"role_description"`
 	PromptHints     string    `json:'prompt_hints"`
 	LoginCommand    []string  `json:"login_command"`

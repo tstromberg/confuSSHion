@@ -16,6 +16,11 @@ import (
 // Handler handles SSH sessions
 func (h Holodeck) Handler(s ssh.Session) error {
 	sid := s.Context().SessionID()[0:12]
+	ip, _, _ := strings.Cut(s.LocalAddr().String(), ":")
+	// We assume IPv4, because some systems we emulate may not have IPv6 compatibility.
+	if len(ip) < 7 {
+		ip = "10.0.0.5"
+	}
 
 	sess := &history.SessionContext{
 		SID:             sid,
@@ -30,8 +35,10 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		RoleDescription: h.nc.RoleDescription,
 		PromptHints:     h.p.Hints(),
 		History:         []history.Entry{},
+		LocalAddr:       s.LocalAddr().String(),
+		NodeIP:          ip,
 	}
-	klog.Infof("session[%s@%s] from %s: cmd=%v, environ=%v", sess.User, sess.SID, sess.RemoteAddr, sess.LoginCommand, sess.Environ)
+	klog.Infof("session[%s@%s] from %s to %s [%s]: cmd=%v, environ=%v", sess.User, sess.SID, sess.RemoteAddr, sess.LocalAddr, ip, sess.LoginCommand, sess.Environ)
 
 	var err error
 	var resp *Response

@@ -29,7 +29,7 @@ func (p OpenVMS) Hints() string {
 - https://antapex.org/vms.txt provides a good guide of what OpenVMS command output looks like
 - The OpenVMS shell lets you define a variable in the form of: VARIABLE_NAME = 10
 - The OpenVMS shell lets you look up the value of a variable with: SHOW SYMBOL VARIABLE_NAME
-- The "SHOW NETWORK" command shows what network protocols are installed, for example, DECNET and TCPIP, as well as network addresses. Here isn example output from a node named SNORRY:
+- The "SHOW NETWORK" command shows what network protocols are installed, for example, DECNET and TCPIP, as well as network addresses. Here is example output from a node named SNORRY:
 
 Product:  DECNET        Node:  SNORRY               Address(es):  1.70
 Product:  TCP/IP        Node:  snorrvijoier.poetry.org Address(es):  10.20.1.20
@@ -51,6 +51,7 @@ View of Cluster from system ID 1094  node: %s
 - HELP <command> should show OpenVMS documentation about a command. For example "HELP DIR" shows help for the DIR command.
 - PRINT filename - This command will queue the file for printing to your standard output queue.
 - SHOW SYMBOL * shows all variables the user has defined within their DCL shell.
+- Commands from other operating systems (Linux, UNIX, Windows) should return an error message as if the command did not exist at all.
 `, node, node, node)
 }
 
