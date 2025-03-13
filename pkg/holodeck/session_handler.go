@@ -15,7 +15,7 @@ import (
 
 // Handler handles SSH sessions
 func (h Holodeck) Handler(s ssh.Session) error {
-	sid := s.Context().SessionID()
+	sid := s.Context().SessionID()[0:12]
 
 	sess := &history.SessionContext{
 		SID:             sid,
@@ -31,7 +31,7 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		PromptHints:     h.p.Hints(),
 		History:         []history.Entry{},
 	}
-	klog.Infof("new session: %+v", sess)
+	klog.Infof("session[%s@%s] from %s: cmd=%v, environ=%v", sess.User, sess.SID, sess.RemoteAddr, sess.LoginCommand, sess.Environ)
 
 	var err error
 	var resp *Response
@@ -73,7 +73,7 @@ func (h Holodeck) Handler(s ssh.Session) error {
 	}
 
 	for {
-		klog.Info("Waiting for user input...")
+		klog.Info("Waiting for input...")
 		cmd, err := term.ReadLine()
 		if err != nil {
 			return fmt.Errorf("readline: %v", err)
@@ -96,11 +96,11 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		// Process command
 		cmdBin, _, _ := strings.Cut(cmd, " ")
 		baseCmd := filepath.Base(cmdBin)
-		klog.Infof("Base command: %s", baseCmd)
+		klog.V(1).Infof("Base command: %s", baseCmd)
 		var resp *Response
 
 		if cacheable[baseCmd] {
-			klog.Infof("%q is cacheable!", baseCmd)
+			klog.V(1).Infof("%q is cacheable!", baseCmd)
 			if cached := h.cache[cmd]; cached != nil {
 				klog.Infof("re-using cached result for %s", cmd)
 				resp = cached
@@ -110,10 +110,10 @@ func (h Holodeck) Handler(s ssh.Session) error {
 			h.cache = make(map[string]*Response)
 		}
 
-		klog.Infof("post-cache resp: %v", resp)
+		klog.V(1).Infof("post-cache resp: %v", resp)
 		// Generate response if not cached
 		if resp == nil {
-			klog.Infof("uncached, history length: %d", len(sess.History))
+			klog.V(1).Infof("uncached, history length: %d", len(sess.History))
 			if len(sess.History) == 1 {
 				resp, err = h.hallucinate(execTmpl("first_command", sess))
 			} else {
@@ -190,7 +190,7 @@ func (h Holodeck) hallucinate(prompt string) (*Response, error) {
 	}
 
 	for x, l := range lines {
-		klog.Infof("Line %02d: %q", x, l)
+		klog.Infof("%02d| %q", x, l)
 		if shellPrompt == "" && x >= len(lines)-1 {
 			if shellPromptRe.MatchString(l) {
 				klog.Infof("Found shell prompt: %q", l)
