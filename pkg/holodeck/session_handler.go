@@ -53,17 +53,18 @@ func (h Holodeck) Handler(s ssh.Session) error {
 			shellPrompt = resp.ShellPrompt
 		}
 	} else {
+		cmd := strings.Join(s.Command(), " ")
 		baseCmd := filepath.Base(s.Command()[0])
-		resp = globalCache[baseCmd]
+		resp = globalCache[cmd]
 		if resp != nil {
-			klog.Infof("using global cache for %q", baseCmd)
+			klog.Infof("using global cache for %q", cmd)
 		} else {
 			resp, err = h.hallucinate(execTmpl("login_command", sess))
 			if err == nil {
 				klog.Infof("Base command: %s", baseCmd)
 				if globallyCacheable[baseCmd] {
-					klog.Infof("globally caching %q as %s", baseCmd, resp.Output)
-					globalCache[baseCmd] = resp
+					klog.Infof("globally caching %q as %s", cmd, resp.Output)
+					globalCache[cmd] = resp
 				}
 			}
 		}
@@ -127,6 +128,8 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		resp := globalCache[cmd]
 		if resp != nil {
 			klog.Infof("re-using globally cached result for %s", cmd)
+		} else {
+			klog.Infof("%q not in global cache", cmd)
 		}
 
 		if globallyCacheable[baseCmd] || locallyCacheable[baseCmd] {
@@ -203,7 +206,7 @@ func (h Holodeck) hallucinate(prompt string) (*Response, error) {
 		return er, nil
 	}
 
-	klog.Infof("Sending prompt: %q", prompt)
+	klog.Infof("Hallucinating content for a %d byte prompt ...", len(prompt))
 	resp, err := h.model.GenerateContent(h.ctx, genai.Text(prompt))
 	if err != nil {
 		return er, fmt.Errorf("model generation failed: %w", err)
@@ -219,6 +222,9 @@ func (h Holodeck) hallucinate(prompt string) (*Response, error) {
 		// Skip markdown formatting (vertex bug workaround)
 		if strings.HasPrefix(l, "```") || strings.HasSuffix(l, "```") {
 			continue
+		}
+		if strings.HasPrefix(l, "`") {
+			l = strings.Trim(l, "`")
 		}
 		lines = append(lines, l)
 	}

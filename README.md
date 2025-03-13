@@ -4,19 +4,25 @@
 
 confuSSHion is a unique LLM-based SSH honeypot that simulates an interactive terminal session for various operating systems.
 
-## Supported Distributions
+## Simulations available
 
 confuSSHion supports simulating the following environments:
 
 - 🐦 AIX
-- 🦊 HP-UX
+- 🦊 Fedora Linux
+- 😈 FreeBSD
+- 🧠 Gentoo Linux
+- 🦑 HP-UX
 - 🌈 IRIX
 - 🍎 NeXTSTEP
+- 🔷 NetBSD
 - 🐡 OpenBSD
 - 🖥️ OpenVMS
+- 🎩 RHEL (Red Hat Enterprise Linux)
 - ☀️ Solaris
 - 🐧 Ubuntu Linux
 - 🌐 Ultrix
+- 🧮 UNICOS
 - 🪟 Microsoft Windows
 - 🐙 Wolfi Linux
 
