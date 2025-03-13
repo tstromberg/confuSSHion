@@ -2,11 +2,11 @@
 
 ## Overview
 
-confuSSHion is a unique LLM-based SSH honeypot that simulates an interactive terminal session for various operating systems.
+confuSSHion is an LLM-based SSH honeypot that simulates an interactive terminal session for a variety of operating systems.
 
-## Simulations available
+## Available Simulations
 
-confuSSHion supports simulating the following environments:
+confuSSHion simulates many esoteric environments:
 
 - 🐦 AIX
 - 🦊 Fedora Linux
@@ -28,68 +28,73 @@ confuSSHion supports simulating the following environments:
 
 ## Features
 
-- 🌐 Supports multiple Unix-like distribution personalities
-- 🤖 AI-powered command response generation using Gemini
+- 🌐 Multiple Unix-like and Windows personalities
+- 🤖 AI-powered responses using Gemini
 - 🔒 Configurable SSH server with public key authentication
 - 🎭 Dynamic terminal simulation
-- 🔍 Session history storage and web UI for browsing captured interactions
-- 🔐 GitHub organization-based authentication
+- 🔍 Session history storage with web UI for reviewing captured interactions
+- 🔐 Optional GitHub organization-based authentication
 
 ## Prerequisites
 
 - Go 1.20+
 
-## Usage
+## Setup and Usage
 
-2. Set your Gemini API key:
-```bash
-export GEMINI_API_KEY=your_api_key_here
-```
+1. Set your Gemini API key:
+   ```bash
+   export GEMINI_API_KEY=your_api_key_here
+   ```
 
-```bash
-go run . [flags]
-```
+2. Run the honeypot:
+   ```bash
+   go run . [flags]
+   ```
 
-### Flags
+### Command-line Options
 
-- `--port`: SSH server port (default: 2222)
-- `--prompt`: Extra prompt for Gemini (default: "this machine acts as a firewall and proxy protecting very sensitive data")
-- `--hostname`: Custom hostname to use (default: auto-generated based on distribution)
-- `--dist`: Target distribution (default: ubuntu) - Options: aix, hpux, irix, nextstep, openbsd, solaris, ubuntu, ultrix, windows, wolfi
-- `--arch`: Target architecture (armd64, amd64, hppa, etc.)
-- `--github-org`: GitHub organization to require users to be part of
-- `--github-refresh-interval`: Interval to refresh GitHub SSH keys (default: 12h)
-- `--public-key-auth`: Require public key authentication
-- `--history`: Path to BadgerDB history database (if empty, history is not saved)
-- `--http-port`: Port for the web UI (0 to disable, default: 8080)
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--port` | SSH server port | 2222 |
+| `--prompt` | Custom prompt for Gemini | "this machine acts as a firewall and proxy protecting very sensitive data" |
+| `--hostname` | Custom hostname | auto-generated based on distribution |
+| `--dist` | Target distribution | ubuntu |
+| `--arch` | Target architecture | - |
+| `--github-org` | GitHub organization for authentication | - |
+| `--github-refresh-interval` | GitHub SSH key refresh interval | 12h |
+| `--public-key-auth` | Enable public key authentication | false |
+| `--history` | Path to history database | - |
+| `--http-port` | Web UI port (0 to disable) | 8080 |
+
+Available distributions: aix, fedora, freebsd, gentoo, hpux, irix, nextstep, netbsd, openbsd, openvms, rhel, solaris, ubuntu, ultrix, unicos, windows, wolfi
 
 ## Examples
 
-Start a basic Ubuntu honeypot:
+**Basic Ubuntu honeypot:**
 ```bash
 go run main.go
 ```
 
-Run as an OpenBSD server with custom prompt:
+**OpenBSD DNS server simulation:**
 ```bash
 go run main.go --dist openbsd --prompt "This is a DNS server for acme-corp.com"
 ```
 
-Run with GitHub organization authentication and session history:
+**GitHub authentication with session history:**
 ```bash
 go run main.go --github-org myorganization --history /path/to/history.db
 ```
 
-Run with public key authentication and custom port:
+**Custom port with public key authentication:**
 ```bash
 go run main.go --port 2223 --dist wolfi --public-key-auth
 ```
 
-Access the web UI for session history:
+**Access the web UI for session history:**
 ```
 http://localhost:8080/
 ```
 
 ## Contributing
 
-Contributions welcome! Please read the contributing guidelines and submit pull requests.
+PR's welcome!
