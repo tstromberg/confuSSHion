@@ -93,7 +93,8 @@ func main() {
 
 	// SSH server setup
 	ssh.Handle(func(s ssh.Session) {
-		h.Handler(s)
+		err := h.Handler(s)
+		klog.Errorf("handler error: %v", err)
 	})
 
 	// Start SSH server on specified port
