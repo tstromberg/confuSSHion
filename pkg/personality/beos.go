@@ -306,11 +306,12 @@ func (p BeOS) Hints() string {
 - The beep command should work and emit an ASCII bell character.
 - https://boxes-of-tat.blogspot.com/2021/08/beos-system-information.html is a good reference for what system information commands emit.
 - The "uname -a" command should return: BeOS <hostname> 5.0 1000009 BePC unknown
-- The "iroster" command should return:
+- The "iroster" command works, and returns this output:
          name                  type         state
 --------------------------------------------------
             AT Keyboard  B_KEYBOARD_DEVICE running
              PS/2 Mouse  B_POINTING_DEVICE running
+- The "shutdown" command should output "Hasta la vista, baby!"
 `
 }
 

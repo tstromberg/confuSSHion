@@ -170,7 +170,7 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		term.Write(resp.Output)
 		sess.History = append(sess.History, history.Entry{Kind: "cmd", T: time.Now(), In: cmd, Out: string(resp.Output)})
 
-		if baseCmd == "exit" || baseCmd == "logout" || baseCmd == "reboot" || baseCmd == "LOGOUT" {
+		if baseCmd == "exit" || baseCmd == "logout" || baseCmd == "reboot" || baseCmd == "LOGOUT" || baseCmd == "shutdown" {
 			time.Sleep(time.Second)
 			break
 		}
