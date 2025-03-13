@@ -115,7 +115,7 @@ type SessionContext struct {
 	NodeIP          string    `json:"node_ip"`
 	RoleDescription string    `json:"role_description"`
 	PromptHints     string    `json:'prompt_hints"`
-	LoginCommand    []string  `json:"login_command"`
+	LoginCommand    string    `json:"login_command"`
 	CurrentCommand  string    `json:"current_command"`
 	Environ         []string  `json:"environ"`
 	History         []Entry   `json:"log"`
