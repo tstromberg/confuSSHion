@@ -13,6 +13,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
+var globalCache = map[string]*Response{}
+
 // Handler handles SSH sessions
 func (h Holodeck) Handler(s ssh.Session) error {
 	sid := s.Context().SessionID()[0:12]
@@ -31,7 +33,7 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		User:            s.User(),
 		RemoteAddr:      s.RemoteAddr().String(),
 		Environ:         s.Environ(),
-		LoginCommand:    s.Command(),
+		LoginCommand:    strings.Join(s.Command(), " "),
 		RoleDescription: h.nc.RoleDescription,
 		PromptHints:     h.p.Hints(),
 		History:         []history.Entry{},
@@ -51,16 +53,32 @@ func (h Holodeck) Handler(s ssh.Session) error {
 			shellPrompt = resp.ShellPrompt
 		}
 	} else {
-		resp, err = h.hallucinate(execTmpl("login_command", sess))
+		baseCmd := filepath.Base(s.Command()[0])
+		resp = globalCache[baseCmd]
+		if resp != nil {
+			klog.Infof("using global cache for %q", baseCmd)
+		} else {
+			resp, err = h.hallucinate(execTmpl("login_command", sess))
+			if err == nil {
+				klog.Infof("Base command: %s", baseCmd)
+				if globallyCacheable[baseCmd] {
+					klog.Infof("globally caching %q as %s", baseCmd, resp.Output)
+					globalCache[baseCmd] = resp
+				}
+			}
+		}
 	}
 
 	if err != nil {
 		time.Sleep(1 * time.Second)
 		return fmt.Errorf("hallucination error: %w", err)
 	}
+	if resp == nil {
+		return fmt.Errorf("initial response is nil?", err)
+	}
 
 	// Record the welcome message
-	sess.History = append(sess.History, history.Entry{T: time.Now(), Kind: "login", In: strings.Join(s.Command(), " "), Out: string(resp.Output)})
+	sess.History = append(sess.History, history.Entry{T: time.Now(), Kind: "login", In: sess.LoginCommand, Out: string(resp.Output)})
 
 	defer func() {
 		if h.historyStore == nil {
@@ -73,6 +91,7 @@ func (h Holodeck) Handler(s ssh.Session) error {
 	}()
 
 	term := term.NewTerminal(s, shellPrompt)
+	klog.Infof("login response: %s", resp.Output)
 	term.Write(resp.Output)
 
 	if len(s.Command()) > 0 {
@@ -103,13 +122,17 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		// Process command
 		cmdBin, _, _ := strings.Cut(cmd, " ")
 		baseCmd := filepath.Base(cmdBin)
-		klog.V(1).Infof("Base command: %s", baseCmd)
-		var resp *Response
+		klog.Infof("Base command: %s", baseCmd)
 
-		if cacheable[baseCmd] {
+		resp := globalCache[cmd]
+		if resp != nil {
+			klog.Infof("re-using globally cached result for %s", cmd)
+		}
+
+		if globallyCacheable[baseCmd] || locallyCacheable[baseCmd] {
 			klog.V(1).Infof("%q is cacheable!", baseCmd)
 			if cached := h.cache[cmd]; cached != nil {
-				klog.Infof("re-using cached result for %s", cmd)
+				klog.Infof("re-using locally cached result for %s", cmd)
 				resp = cached
 			}
 		} else {
@@ -117,7 +140,6 @@ func (h Holodeck) Handler(s ssh.Session) error {
 			h.cache = make(map[string]*Response)
 		}
 
-		klog.V(1).Infof("post-cache resp: %v", resp)
 		// Generate response if not cached
 		if resp == nil {
 			klog.V(1).Infof("uncached, history length: %d", len(sess.History))
@@ -127,7 +149,12 @@ func (h Holodeck) Handler(s ssh.Session) error {
 				resp, err = h.hallucinate(execTmpl("subsequent_commands", sess))
 			}
 
-			if cacheable[baseCmd] {
+			klog.Infof("is %q cacheable globally? %v", baseCmd, globallyCacheable[baseCmd])
+			if globallyCacheable[baseCmd] {
+				klog.Infof("globally caching %q", baseCmd)
+				globalCache[baseCmd] = resp
+			} else if locallyCacheable[baseCmd] {
+				klog.Infof("locally caching %q", baseCmd)
 				h.cache[cmd] = resp
 			}
 		}
@@ -176,7 +203,7 @@ func (h Holodeck) hallucinate(prompt string) (*Response, error) {
 		return er, nil
 	}
 
-	klog.V(1).Infof("Sending prompt: %q", prompt)
+	klog.Infof("Sending prompt: %q", prompt)
 	resp, err := h.model.GenerateContent(h.ctx, genai.Text(prompt))
 	if err != nil {
 		return er, fmt.Errorf("model generation failed: %w", err)
