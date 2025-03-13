@@ -36,6 +36,7 @@ func (h Holodeck) Handler(s ssh.Session) error {
 	var err error
 	var resp *Response
 	shellPrompt := h.p.ShellPrompt()
+	time.Sleep(500 * time.Millisecond)
 
 	if len(s.Command()) == 0 {
 		resp, err = h.hallucinate(execTmpl("welcome", sess))
@@ -47,7 +48,8 @@ func (h Holodeck) Handler(s ssh.Session) error {
 	}
 
 	if err != nil {
-		klog.Errorf("hallucination error: %w", err)
+		time.Sleep(1 * time.Second)
+		return fmt.Errorf("hallucination error: %w", err)
 	}
 
 	// Record the welcome message
@@ -63,7 +65,6 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		}
 	}()
 
-	time.Sleep(500 * time.Millisecond)
 	term := term.NewTerminal(s, shellPrompt)
 	term.Write(resp.Output)
 
@@ -79,6 +80,10 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		}
 
 		cmd = strings.TrimSpace(cmd)
+		if len(cmd) > 1024 {
+			klog.Warningf("truncating long command (%d)", len(cmd))
+			cmd = cmd[0:1023]
+		}
 		klog.Infof("Command received: [%s]", cmd)
 		sess.CurrentCommand = cmd
 
@@ -158,14 +163,16 @@ func execTmpl(name string, sess *history.SessionContext) string {
 
 // hallucinate generates a response for the given prompt using the LLM
 func (h Holodeck) hallucinate(prompt string) (*Response, error) {
+	er := &Response{Output: []byte("Fork failed: Resource temporarily unavailable\n"), ShellPrompt: "$"}
+
 	if prompt == "" {
-		return &Response{Output: []byte("Fork failed: Resource temporarily unavailable\n"), ShellPrompt: "$"}, nil
+		return er, nil
 	}
 
-	klog.Infof("Sending prompt: %q", prompt)
+	klog.V(1).Infof("Sending prompt: %q", prompt)
 	resp, err := h.model.GenerateContent(h.ctx, genai.Text(prompt))
 	if err != nil {
-		return nil, fmt.Errorf("model generation failed: %w", err)
+		return er, fmt.Errorf("model generation failed: %w", err)
 	}
 
 	// Process the response
@@ -191,7 +198,7 @@ func (h Holodeck) hallucinate(prompt string) (*Response, error) {
 				shellPrompt = l
 				break
 			} else {
-				klog.Warningf("Expected prompt not found in: %q", l)
+				klog.V(1).Infof("Expected prompt not found in: %q", l)
 			}
 		}
 		output = append(output, l)
