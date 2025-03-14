@@ -175,7 +175,7 @@ func (h Holodeck) Handler(s ssh.Session) error {
 			sess.CurrentWorkingDirectory = ""
 			cdArgs := strings.Split(cmd, " ")
 			klog.Infof("args=%v len=%d", cdArgs, len(bytes.TrimSpace(resp.Output)))
-			if len(cdArgs) > 1 && len(bytes.TrimSpace(resp.Output)) == 0 && !strings.Contains(cmd, "$") {
+			if len(cdArgs) > 1 && len(bytes.TrimSpace(resp.Output)) <= 1 && !strings.Contains(cmd, "$") {
 				klog.Infof("updating current working directory to %s", cdArgs[1])
 				sess.CurrentWorkingDirectory = cdArgs[1]
 			}
@@ -237,6 +237,9 @@ func (h Holodeck) hallucinate(prompt string) (*Response, error) {
 		}
 		if strings.HasPrefix(l, "`") {
 			l = strings.Trim(l, "`")
+		}
+		if strings.HasPrefix(l, "[") {
+			l = strings.Trim(l, "[]")
 		}
 		lines = append(lines, l)
 	}
