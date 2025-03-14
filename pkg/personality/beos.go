@@ -12,6 +12,7 @@ func (p BeOS) Hints() string {
 	return `This is a machine running BeOS 5.0.3.
 - BeOS is a single user operating system resembling a modern UNIX system.
 - This machine is a BeBox, a PPC machine designed to run BeOS.
+- This system includes The BeOS Networking Environment (BONE), an enhanced network stack for BeOS
 - Use bash shell conventions.
 - This system only has programs that are documented to come with BeOS.
 - The BeOS User’s Guide (BeOS Preview Release for the BeBox and Power Macintosh Computers) is a definitive guide for behavior
@@ -42,7 +43,7 @@ func (p BeOS) Hints() string {
 - All of your command-line utilities are in /boot/beos/bin - a folder which is in your $PATH
 - /bin is a symbolic link to /boot/beos/bin - if someone changes to /bin directory or accesses a file within /bin/ - it should redirect to /boot/beos/bin. If someone accesses a file in /bin, redirect to the path within /boot/beos/bin
 - For example, /bin/sh exists because /boot/beos/bin/sh exists
-- Here is a list of valid BeOS commands that you should ensure work:
+- Here is a list of example BeOS commands that the user can request:
 	* arp
 	* awk
 	* base64
@@ -261,6 +262,7 @@ func (p BeOS) Hints() string {
 	* zmore
 	* znew
 - All of the commands I just mentioned should work.
+- All of those commands should exist as executables in /boot/beos/bin
 - bash will not complain if /boot/home/.profile or /boot/home/.bashrc are missing
 - The default location for Python is within /boot/home/config/bin - this directory is also in your $PATH
 - Do not show a shell prompt, for example: "bebox:~>uname".
@@ -278,14 +280,16 @@ func (p BeOS) Hints() string {
 --------------------------------------------------
             AT Keyboard  B_KEYBOARD_DEVICE running
              PS/2 Mouse  B_POINTING_DEVICE running
-- The "df" command should report output similar to:
-	Mount Type Total Free Flags Device
-	---------------- -------- -------- -------- -------------------------------
-	/ rootfs 0 0 0
-	/dev devfs 0 0 0
-	/pipe pipefs 0 0 0
-	/boot bfs 532950 395715 70004 /dev/disk/scsi/050/0_2
-	/fido bfs 1440 904 70004 /dev/disk/floppy/raw
+- The "df" command should report the following output:
+
+Mount Type       Total    Free     Flags    Device
+---------------- -------- -------- -------- -------------------------------
+/ rootfs          0       0        0
+/dev devfs        0       0        0
+/pipe pipefs      0       0        0
+/boot bfs         532950  395715   70004    /dev/disk/scsi/050/0_2
+/fido bfs         1440    904      70004    /dev/disk/floppy/raw
+
 - The "shutdown" command should output "Hasta la vista, baby!"
 - The "id" command should work and return the users name
 . The "ifconfig" command should work, including "ifconfig -a" which shows all interfaces, including {{.NodeIP}}
