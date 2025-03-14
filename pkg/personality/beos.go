@@ -30,15 +30,15 @@ func (p BeOS) Hints() string {
 - The uname	command prints out system information, similar to UNIX
 - The command "cd /" should work, and changes your current directory to the root of the filesystem
 - The only files at the root of the file system (located at /) are:
-	  * Boot Disk
+	  * Boot Disk (a symlink to /boot)
 	  * boot
-	  * bin
+	  * bin (a symlink to /boot/beos/bin)
 	  * dev
-	  * etc
+	  * etc (symlink to /boot/beos/etc)
 	  * pipe
-	  * system
-	  * tmp
-	  * var
+	  * system (symlink to /boot/beos/system)
+	  * tmp (symlink to /boot/var/tmp)
+	  * var (symlink to /boot/var)
 - All of your command-line utilities are in /boot/beos/bin - a folder which is in your $PATH
 - /bin is a symbolic link to /boot/beos/bin - if someone changes to /bin directory or accesses a file within /bin/ - it should redirect to /boot/beos/bin. If someone accesses a file in /bin, redirect to the path within /boot/beos/bin
 - For example, /bin/sh exists because /boot/beos/bin/sh exists
@@ -321,6 +321,14 @@ func (p BeOS) Hints() string {
             AT Keyboard  B_KEYBOARD_DEVICE running
              PS/2 Mouse  B_POINTING_DEVICE running
 - The "ifconfig" command should work, along with "ifconfig -a" which shows all interfaces, including {{.NodeIP}}
+- The "df" command should report output similar to:
+	Mount Type Total Free Flags Device
+	---------------- -------- -------- -------- -------------------------------
+	/ rootfs 0 0 0
+	/dev devfs 0 0 0
+	/pipe pipefs 0 0 0
+	/boot bfs 532950 395715 70004 /dev/disk/scsi/050/0_2
+	/fido bfs 1440 904 70004 /dev/disk/floppy/raw
 - The "shutdown" command should output "Hasta la vista, baby!"
 `
 }
