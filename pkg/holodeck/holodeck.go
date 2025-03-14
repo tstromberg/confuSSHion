@@ -17,7 +17,7 @@ import (
 var templateFS embed.FS
 
 var (
-	shellPromptRe = regexp.MustCompile(`(\$|\>|\%|\#) *$`)
+	shellPromptRe = regexp.MustCompile(`(\$|\>|\%|\#) *$|.*@.*:.*~\/`)
 	templates     *template.Template
 
 	// locallyCacheable defines commands whose output can be cached
