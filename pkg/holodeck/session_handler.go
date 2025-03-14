@@ -1,6 +1,7 @@
 package holodeck
 
 import (
+	"bytes"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -57,7 +58,7 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		baseCmd := filepath.Base(s.Command()[0])
 		resp = globalCache[cmd]
 		if resp != nil {
-			klog.Infof("using global cache for %q", cmd)
+			klog.V(1).Infof("using global cache for %q", cmd)
 		} else {
 			resp, err = h.hallucinate(execTmpl("login_command", sess))
 			if err == nil {
@@ -129,7 +130,7 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		if resp != nil {
 			klog.Infof("re-using globally cached result for %s", cmd)
 		} else {
-			klog.Infof("%q not in global cache", cmd)
+			klog.V(1).Infof("%q not in global cache", cmd)
 		}
 
 		if globallyCacheable[baseCmd] || locallyCacheable[baseCmd] {
@@ -139,7 +140,7 @@ func (h Holodeck) Handler(s ssh.Session) error {
 				resp = cached
 			}
 		} else {
-			klog.Infof("Flushing cache for non-cacheable command: %q", baseCmd)
+			klog.Infof("Flushing local cache for non-cacheable command: %q", baseCmd)
 			h.cache = make(map[string]*Response)
 		}
 
@@ -170,10 +171,21 @@ func (h Holodeck) Handler(s ssh.Session) error {
 		term.Write(resp.Output)
 		sess.History = append(sess.History, history.Entry{Kind: "cmd", T: time.Now(), In: cmd, Out: string(resp.Output)})
 
+		if baseCmd == "cd" {
+			sess.CurrentWorkingDirectory = ""
+			cdArgs := strings.Split(cmd, " ")
+			klog.Infof("args=%v len=%d", cdArgs, len(bytes.TrimSpace(resp.Output)))
+			if len(cdArgs) > 1 && len(bytes.TrimSpace(resp.Output)) == 0 && !strings.Contains(cmd, "$") {
+				klog.Infof("updating current working directory to %s", cdArgs[1])
+				sess.CurrentWorkingDirectory = cdArgs[1]
+			}
+		}
+
 		if baseCmd == "exit" || baseCmd == "logout" || baseCmd == "reboot" || baseCmd == "LOGOUT" || baseCmd == "shutdown" {
 			time.Sleep(time.Second)
 			break
 		}
+
 		if cmd == "kill -9 -1" {
 			time.Sleep(time.Second)
 			break

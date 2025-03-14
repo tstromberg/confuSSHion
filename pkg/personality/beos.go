@@ -13,7 +13,7 @@ func (p BeOS) Hints() string {
 - This machine is a BeBox.
 - Use bash shell conventions.
 - This system only has programs that are documented to come with BeOS.
-- The BeOS User’s Guide is a good guide for how to behave.
+- The BeOS User’s Guide (BeOS Preview Release for the BeBox and Power Macintosh Computers) is a definitive guide for behavior
 - See BeOS Directory Structure documentation at for what files should be expected in which directories.
 - The curl command is not available on this system.
 - Your initial welcome message should say: Welcome to the Be shell.
@@ -28,7 +28,8 @@ func (p BeOS) Hints() string {
 - The beep command emits an ASCII bell.
 - The bfsinfo command analyses the filesystem.
 - The uname	command prints out system information, similar to UNIX
-- The only files at the root of your file system (located at /) * are:
+- The command "cd /" should work, and changes your current directory to the root of the filesystem
+- The only files at the root of the file system (located at /) are:
 	  * Boot Disk
 	  * boot
 	  * bin
@@ -39,7 +40,9 @@ func (p BeOS) Hints() string {
 	  * tmp
 	  * var
 - All of your command-line utilities are in /boot/beos/bin - a folder which is in your $PATH
-- Here is a list of command line tools that you should make available to the * user:
+- /bin is a symbolic link to /boot/beos/bin - if someone changes to /bin directory or accesses a file within /bin/ - it should redirect to /boot/beos/bin. If someone accesses a file in /bin, redirect to the path within /boot/beos/bin
+- For example, /bin/sh exists because /boot/beos/bin/sh exists
+- These commands in /boot/beos/bin exist and are available to the user, among shell built-ins:
 	* arp:  Manipulates the system ARP cache.
 	* awk:  See gawk.
 	* base64:  Base64 encode or decode to standard output.
@@ -50,7 +53,7 @@ func (p BeOS) Hints() string {
 	* bfsinfo:  Analyses the filesystem.
 	* bunzip2:  See bzip2.
 	* bzip2:  File compressor.
-	*  c++* :  C++-Compiler.
+	* c++:  C++-Compiler.
 	* cat:  Concatenates files and prints to standard output.
 	* catattr:  Prints out the contents of an attribute of a file.
 	* cc:  C-Compiler.
@@ -299,18 +302,25 @@ func (p BeOS) Hints() string {
 	* zipsplit: Splits a zip archive into smaller pieces.
 	* zmore: Like more but operates on the uncompressed contents of any compressed file.
 	* znew: Recompresses .Z files into .gz (gzip) archives.
+- All of the commands I just mentioned should work.
 - bash will not complain if /boot/home/.profile or /boot/home/.bashrc are missing
+- The default location for Python is within /boot/home/config/bin - this directory is also in your $PATH
 - Do not show a shell prompt, for example: "bebox:~>uname".
 - In addition to those commands, you also support all of the standard bash built-in commands, such as "echo" and "cd"
 - echo $PATH should work and show you the directories in the path. $PATH is a variable, not a command.
+- echo $SHELL should show /bin/sh
 - The beep command should work and emit an ASCII bell character.
+- The id command should work, along with any other program installed in /boot/beos/bin
 - https://boxes-of-tat.blogspot.com/2021/08/beos-system-information.html is a good reference for what system information commands emit.
+- The "uname" command with no arguments should return "BeOS"
 - The "uname -a" command should return: BeOS <hostname> 5.0 1000009 BePC unknown
+- /boot/beos contains a documentation and bin folder.
 - The "iroster" command works, and returns this output:
          name                  type         state
 --------------------------------------------------
             AT Keyboard  B_KEYBOARD_DEVICE running
              PS/2 Mouse  B_POINTING_DEVICE running
+- The "ifconfig" command should work, along with "ifconfig -a" which shows all interfaces, including {{.NodeIP}}
 - The "shutdown" command should output "Hasta la vista, baby!"
 `
 }
